@@ -21,15 +21,21 @@ namespace Evaluation.Portal.API
         public void ConfigureServices(IServiceCollection services)
         {
             services.Configure<DatabaseSettings>(Configuration.GetSection(nameof(DatabaseSettings)));
+            services.Configure<EmailSettings>(Configuration.GetSection(nameof(EmailSettings)));
 
             services.AddSingleton<IDatabaseSettings>(sp => sp.GetRequiredService<IOptions<DatabaseSettings>>().Value);
+            services.AddSingleton<IEmailSettings>(sp => sp.GetRequiredService<IOptions<EmailSettings>>().Value);
+
+            services.AddTransient<IEmailService, EmailService>();
 
             services.AddSingleton<EngagementService>();
             services.AddSingleton<UserService>();
             services.AddSingleton<PanelService>();
             services.AddSingleton<CandidateService>();
+            services.AddSingleton<ReportService>();
 
             services.AddControllers();
+            services.AddControllers().AddControllersAsServices();
 
             services.AddCors(options =>
             {
@@ -54,8 +60,6 @@ namespace Evaluation.Portal.API
 
             app.UseCors("CorsPolicy");
             app.UseAuthorization();
-
-            
 
             app.UseEndpoints(endpoints =>
             {

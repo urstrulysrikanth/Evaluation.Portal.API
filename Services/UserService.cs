@@ -1,4 +1,6 @@
-﻿using Evaluation.Portal.API.Models;
+﻿using Evaluation.Portal.API.Helpers;
+using Evaluation.Portal.API.Models;
+using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -9,8 +11,11 @@ namespace Evaluation.Portal.API.Services
     public class UserService
     {
         private readonly IMongoCollection<User> _users;
-        public UserService(IDatabaseSettings settings)
+        private readonly EmailSettings _emailSettings;
+
+        public UserService(IDatabaseSettings settings, IOptions<EmailSettings> emailSettings)
         {
+            _emailSettings = emailSettings.Value;
             var client = new MongoClient(settings.ConnectionString);
             var database = client.GetDatabase(settings.DatabaseName);
 
@@ -30,6 +35,7 @@ namespace Evaluation.Portal.API.Services
 
         public void InsertUser(User user)
         {
+            user.Password = CryptoEngine.Encrypt(PasswordGenerator.RandomPassword(8), _emailSettings.HashKey);
             _users.InsertOneAsync(user).ConfigureAwait(false);
         }
 

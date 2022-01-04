@@ -15,6 +15,9 @@ namespace Evaluation.Portal.API.Models
         [BsonElement("name")]
         public string Name { get; set; }
 
+        [BsonElement("password")]
+        public string Password { get; set; }
+
         [BsonElement("tcsEmailId")]
         public string TcsEmailId { get; set; }
 

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Evaluation.Portal.API.Controllers
 {
@@ -13,9 +14,12 @@ namespace Evaluation.Portal.API.Controllers
     {
         private readonly UserService _userService;
 
-        public UserController(UserService userService)
+        private readonly EmailController _emailController;
+
+        public UserController(UserService userService, EmailController emailController)
         {
             _userService = userService;
+            _emailController = emailController;
         }
 
         [HttpGet]
@@ -56,15 +60,25 @@ namespace Evaluation.Portal.API.Controllers
 
 
         [HttpPost]
-        public void Post([FromBody] User user)
+        public async Task<IActionResult> Post([FromBody] User user)
         {
             try
             {
                 _userService.InsertUser(user);
+
+                WelcomeRequest welcomeRequest = new WelcomeRequest()
+                {
+                    Email = user.TcsEmailId,
+                    Password = user.Password,
+                    UserName = user.Name
+                };
+
+                await _emailController.SendWelcomeEmailAsync(welcomeRequest);
             }
             catch (Exception ex)
-            {               
+            {
             }
+            return Ok();
         }
 
 
@@ -77,7 +91,7 @@ namespace Evaluation.Portal.API.Controllers
             }
             catch (Exception ex)
             {
-               
+
             }
         }
 
