@@ -26,45 +26,58 @@ namespace Evaluation.Portal.API.Services
         public Report GetReport(ReportFilter reportFilter)
         {
             Report report = new Report();
-            
-            switch (reportFilter.Name.ToUpper())
+
+            switch (reportFilter.Name?.ToUpper())
             {
                 case "PROFILES RECEIVED":
                     FilterDefinitionBuilder<Candidate> filterBuilder = Builders<Candidate>.Filter;
 
                     FilterDefinition<Candidate> filter = filterBuilder.Gte(x => x.Details.CreatedDate, reportFilter.From) & filterBuilder.Lte(x => x.Details.CreatedDate, reportFilter.To);
 
-                    report.ReportLabels = _candidates.Find(filter).ToListAsync().Result.GroupBy(i => i.Details.CreatedDate.HasValue ? i.Details.CreatedDate.Value.Month : 0)
-                         .Select(g => CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(g.Key));
+                    //DateRange filter on DB
+                    List<Candidate> result = _candidates.Find(filter).ToListAsync().Result;
 
+                    //GetMonth names
+                    var monthRanges = result.GroupBy(i => i.Details.CreatedDate.HasValue ? i.Details.CreatedDate.Value.Month : 0)
+                          .Select(g => new
+                          {
+                              MonthNumber = g.Key,
+                              MonthName = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(g.Key)
+                          });
 
-                    IEnumerable<string> sources = _candidates.Find(filter).ToListAsync().Result.GroupBy(i => i.Source.Name)
-                         .Select(g => g.Key);
+                    //Unique soures
+                    IEnumerable<string> sources = result.Select(x => x.Source.Name).Distinct();
+
+                    //Labels
+                    report.ReportLabels = new List<string>();
+                    report.ReportLabels.AddRange(monthRanges.Select(x => x.MonthName));
 
                     List<ReportData> reportData = new List<ReportData>();
-                    foreach (var source in sources)
+
+                    List<string> dataList = new List<string>();
+
+                    foreach (var soure in sources)
                     {
-                        filter = filterBuilder.Gte(x => x.Details.CreatedDate, reportFilter.From) & filterBuilder.Lte(x => x.Details.CreatedDate, reportFilter.To) & filterBuilder.Eq(x => x.Source.Name, source);
+                        List<object> data = new List<object>();
 
-                        var data = _candidates.Find(filter).ToListAsync().Result.GroupBy(i => i.Details.CreatedDate.HasValue ? i.Details.CreatedDate.Value.Month : 0)
-                            .Select(g => new
-                            {
-                                Month = CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(g.Key),
-                                count = g.Count()
-                            });
-
-                        reportData.Add(new ReportData
+                        foreach (var month in monthRanges)
                         {
-                            Label = source,
-                            Data = data.Select(x => x.count as object).ToList()
+                            var countData = result.Where(x => x.Source.Name == soure && x.Details.CreatedDate.Value.Month == month.MonthNumber).Count();
+                            data.Add(countData);
+                        }
+                        reportData.Add(new ReportData()
+                        {
+                            Data = data,
+                            Label = soure
                         });
                     }
+                    
                     report.ReportData = reportData;
                     break;
                 default:
                     break;
             }
             return report;
-        } 
+        }
     }
 }

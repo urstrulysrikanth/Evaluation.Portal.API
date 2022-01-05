@@ -16,7 +16,7 @@ namespace Evaluation.Portal.API.Controllers
         }
 
         [HttpPost("GetReport")]
-        public ActionResult<Report> GetReport([FromForm] ReportFilter filter)
+        public ActionResult<Report> GetReport([FromBody] ReportFilter filter)
         {
             var emp = _reportService.GetReport(filter);
 
