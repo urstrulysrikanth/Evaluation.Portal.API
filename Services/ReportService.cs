@@ -29,7 +29,7 @@ namespace Evaluation.Portal.API.Services
 
             switch (reportFilter.Name?.ToUpper())
             {
-                case "PROFILES RECEIVED":
+                case "PROFILES RECEIVED BY MONTH":
                     FilterDefinitionBuilder<Candidate> filterBuilder = Builders<Candidate>.Filter;
 
                     FilterDefinition<Candidate> filter = filterBuilder.Gte(x => x.Details.CreatedDate, reportFilter.From) & filterBuilder.Lte(x => x.Details.CreatedDate, reportFilter.To);
